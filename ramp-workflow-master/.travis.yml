@@ -1,0 +1,33 @@
+language: python
+dist: trusty
+cache: pip
+branches:
+  only:
+  - master
+env:
+  - PYTHON_VERSION=2.7 IPYTHON_KERNEL=python2
+  - PYTHON_VERSION=3.5 IPYTHON_KERNEL=python3
+  - PYTHON_VERSION=3.6 IPYTHON_KERNEL=python3
+before_install:
+    - wget -q http://repo.continuum.io/miniconda/Miniconda-3.6.0-Linux-x86_64.sh -O miniconda.sh
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b -p /home/travis/miniconda
+    - export PATH=/home/travis/miniconda/bin:$PATH
+    - conda update --yes --quiet conda
+install:
+    - conda create -n testenv --yes pip python=$PYTHON_VERSION
+    - source activate testenv
+    - pip install -r testing-requirements.txt
+    # install tensorflow to avoid: ImportError: No module named google.protobuf
+    # encountered when installing during testing from requirements.txt
+    # pinned to version 1.3 to avoid package collision between tensorflow and
+    # nbconvert
+    - pip install tensorflow==1.3
+    - pip install .
+script:
+    - flake8 rampwf --ignore=F401,E211,E265,W503
+    - pytest -s -v --cov=rampwf rampwf
+after_success:
+    - codecov
+notifications:
+  email: true
